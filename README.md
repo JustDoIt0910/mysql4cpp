@@ -8,7 +8,7 @@ mysql api的c++简单封装
 创建连接
 
 ```c++
-Database db("test", "20010910cheng", "localhost", "root");
+Database db("db_name", "your_database_password", "localhost", "your_database_userame");
 SqlConn conn = db.getConn();
 if (!conn.isOpen())
     printf("connect error: %s\n", conn.getError().c_str());
