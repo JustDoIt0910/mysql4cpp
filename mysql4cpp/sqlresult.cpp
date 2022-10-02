@@ -110,10 +110,10 @@ string SqlResult::getString(const string& columnName)
 
 Timestamp SqlResult::getTime(int columnIndex)
 {
-	return Timestamp();
+	return Timestamp(time(NULL));
 }
 
 Timestamp SqlResult::getTime(const string& columnName)
 {
-	return Timestamp();
+	return Timestamp(time(NULL));
 }

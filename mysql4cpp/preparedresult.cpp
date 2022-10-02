@@ -78,10 +78,10 @@ string PreparedResult::getString(const string& columnName)
 
 Timestamp PreparedResult::getTime(int columnIndex)
 {
-    return Timestamp();
+    return Timestamp(time(NULL));
 }
 
 Timestamp PreparedResult::getTime(const string& columnName)
 {
-    return Timestamp();
+    return Timestamp(time(NULL));
 }
