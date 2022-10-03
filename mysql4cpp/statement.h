@@ -33,7 +33,7 @@ public:
 	void setFloat(int columnIndex, float value);
 	void setDouble(int columnIndex, double value);
 	void setString(int columnIndex, const string& value);
-	void setTime(int columnIndex, Timestamp value);
+	void setTime(int columnIndex, Timestamp value, enum_field_types type);
 	Res getRes(int index);
 	Res getRes(const string& columnName);
 	MYSQL_STMT* get();

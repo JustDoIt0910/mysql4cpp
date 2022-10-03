@@ -24,7 +24,10 @@ int main()
 		while (rs.hasNext())
 		{
 			rs.next();
-			printf("id: %d, name: %s\n", rs.getInt(1), rs.getString(2).c_str());
+			printf("id: %d, name: %s, create_time: %s\n", 
+				rs.getInt(1), 
+				rs.getString(2).c_str(), 
+				rs.getTime(3).toFormattedString().c_str());
 		}*/
 
 	/*string sql = "update user set create_time = NOW() where name = 'jeff'";
@@ -33,10 +36,20 @@ int main()
 
 
     //using prepared statement
-	Statement stmt = conn.prepareStatment("select * from user where name = ? or id = ?");
-	stmt.setString(1, "jack");
-	stmt.setInt(2, 7);
-	ResultSet rs = stmt.executeQuery();
+	
+	Statement stmt = conn.prepareStatment("update user set create_time = ? where name = ?");
+	stmt.setString(2, "james");
+	Timestamp now = Timestamp::now();
+	stmt.setTime(1, now, MYSQL_TYPE_TIMESTAMP);
+	int affected = stmt.executeUpdate();
+	if (affected)
+		printf("rows affected: %d\n", affected);
+	else
+		cout << stmt.getError() << endl;
+
+	Statement stmt2 = conn.prepareStatment("select * from user where name = ?");
+	stmt2.setString(1, "james");
+	ResultSet rs = stmt2.executeQuery();
 	if (rs.isValid())
 	{
 		while (rs.hasNext())
@@ -44,21 +57,11 @@ int main()
 			rs.next();
 			int id = rs.getInt("id");
 			string name = rs.getString("name");
-			printf("id: %d, name: %s\n", id, name.c_str());
+			Timestamp t = rs.getTime("create_time");
+			printf("id: %d, name: %s, create_time: %s\n", id, name.c_str(), t.toFormattedString().c_str());
 		}
 	}
 	else
-		cout << stmt.getError() << endl;
-
-	/*Statement stmt = conn.prepareStatment("insert into user(name, create_time) values(?, NOW()), (?, NOW()), (?, NOW()), (?, NOW())");
-	stmt.setString(1, "rose");
-	stmt.setString(2, "john");
-	stmt.setString(3, "mary");
-	stmt.setString(4, "jeff");
-	int affected = stmt.executeUpdate();
-	if (affected)
-		printf("rows affected: %d\n", affected);
-	else
-		cout << stmt.getError() << endl;*/
+		cout << stmt2.getError() << endl;
 	return 0;
 }

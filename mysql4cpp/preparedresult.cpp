@@ -78,10 +78,18 @@ string PreparedResult::getString(const string& columnName)
 
 Timestamp PreparedResult::getTime(int columnIndex)
 {
-    return Timestamp(time(NULL));
+    Res res = stmt->getRes(columnIndex - 1);
+    MYSQL_TIME* mytime = (MYSQL_TIME*)(res.data);
+    if (!mytime)
+        return Timestamp();
+    return Timestamp(mytime);
 }
 
 Timestamp PreparedResult::getTime(const string& columnName)
 {
-    return Timestamp(time(NULL));
+    Res res = stmt->getRes(columnName);
+    MYSQL_TIME* mytime = (MYSQL_TIME*)(res.data);
+    if (!mytime)
+        return Timestamp();
+    return Timestamp(mytime);
 }

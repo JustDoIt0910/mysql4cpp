@@ -21,23 +21,56 @@ Timestamp::Timestamp(const string& timeStr)
 		microSecondsSinceEpoch = 0;
 		return;
 	}
-	microSecondsSinceEpoch = mktime(&_tm);
-}
-
-Timestamp::Timestamp(const string& timeStr, const string& format)
-{
+	microSecondsSinceEpoch = mktime(&_tm) * microSecondsPerSecond;
 }
 
 Timestamp::Timestamp(const MYSQL_TIME* mysqlTime)
 {
+	struct tm _tm;
+	memset(&_tm, 0, sizeof(_tm));
+	_tm.tm_year = mysqlTime->year - 1900;
+	_tm.tm_mon = mysqlTime->month - 1;
+	_tm.tm_mday = mysqlTime->day;
+	_tm.tm_hour = mysqlTime->hour;
+	_tm.tm_min = mysqlTime->minute;
+	_tm.tm_sec = mysqlTime->second;
+	microSecondsSinceEpoch = mktime(&_tm) * microSecondsPerSecond + mysqlTime->second_part;
 }
 
 void Timestamp::addTime(int value, Timestamp::TimeUnit unit)
 {
+	struct tm _tm;
+	memset(&_tm, 0, sizeof(_tm));
+	time_t t = microSecondsSinceEpoch / microSecondsPerSecond;
+	localtime_s(&_tm, &t);
+	switch (unit)
+	{
+	case year:
+		_tm.tm_year = _isvalid_tm_field(_tm.tm_year + value, year) ? _tm.tm_year + value : _tm.tm_year;
+		break;
+	case month:
+		_tm.tm_mon = _isvalid_tm_field(_tm.tm_mon + value, month) ? _tm.tm_mon + value : _tm.tm_mon;
+		break;
+	case day:
+		_tm.tm_mday = _isvalid_tm_field(_tm.tm_mday + value, day) ? _tm.tm_mday + value : _tm.tm_mday;
+		break;
+	case hour:
+		_tm.tm_hour = _isvalid_tm_field(_tm.tm_hour + value, hour) ? _tm.tm_hour + value : _tm.tm_hour;
+		break;
+	case minute:
+		_tm.tm_min = _isvalid_tm_field(_tm.tm_min + value, minute) ? _tm.tm_min + value : _tm.tm_min;
+		break;
+	case second:
+		_tm.tm_sec = _isvalid_tm_field(_tm.tm_sec + value, second) ? _tm.tm_sec + value : _tm.tm_sec;
+		break;
+	default: break;
+	}
+	microSecondsSinceEpoch = mktime(&_tm) * microSecondsPerSecond;
 }
 
 void Timestamp::addSeconds(double seconds)
 {
+	microSecondsSinceEpoch += seconds * microSecondsPerSecond;
 }
 
 string Timestamp::toFormattedString()
@@ -55,9 +88,24 @@ string Timestamp::toFormattedString()
 	return string(buf);
 }
 
-MYSQL_TIME Timestamp::toMysqlTime()
+MYSQL_TIME Timestamp::toMysqlTime(enum_mysql_timestamp_type type)
 {
-	return MYSQL_TIME();
+	MYSQL_TIME mytime;
+	memset(&mytime, 0, sizeof(mytime));
+	mytime.time_type = type;
+	struct tm _tm;
+	time_t t = microSecondsSinceEpoch / microSecondsPerSecond;
+	time_t micro = microSecondsSinceEpoch % microSecondsPerSecond;
+	memset(&_tm, 0, sizeof(_tm));
+	localtime_s(&_tm, &t);
+	mytime.year = _tm.tm_year + 1900;
+	mytime.month = _tm.tm_mon + 1;
+	mytime.day = _tm.tm_mday;
+	mytime.hour = _tm.tm_hour;
+	mytime.minute = _tm.tm_min;
+	mytime.second = _tm.tm_sec;
+	mytime.second_part = micro;
+	return mytime;
 }
 
 Timestamp Timestamp::now()
@@ -80,10 +128,10 @@ Timestamp::ParseResult Timestamp::parseTimeStr(const string& str, struct tm* _tm
 		return fail;
 	_tm->tm_year = stoi(ymd[0]) - 1900;
 	_tm->tm_mon = stoi(ymd[1]) - 1;
-	if (_tm->tm_mon < 0 || _tm->tm_mon > 11)
+	if (!_isvalid_tm_field(_tm->tm_mon, month))
 		return fail;
 	_tm->tm_mday = stoi(ymd[2]);
-	if (_tm->tm_mday < 1 || _tm->tm_mday > 31)
+	if (!_isvalid_tm_field(_tm->tm_mday, day))
 		return fail;
 	if (spaceIdx != string::npos)
 	{
@@ -95,18 +143,18 @@ Timestamp::ParseResult Timestamp::parseTimeStr(const string& str, struct tm* _tm
 		if (sz == 0)
 			return success;
 		_tm->tm_hour = stoi(hms[0]);
-		if (_tm->tm_hour > 24 || _tm->tm_hour < 0)
+		if (!_isvalid_tm_field(_tm->tm_hour, hour))
 			return fail;
 		if (sz > 1)
 		{
 			_tm->tm_min = stoi(hms[1]);
-			if (_tm->tm_min > 59 || _tm->tm_min < 0)
+			if (!_isvalid_tm_field(_tm->tm_min, minute))
 				return fail;
 		}
 		if (sz > 2)
 		{
 			_tm->tm_sec = stoi(hms[2]);
-			if (_tm->tm_sec > 59 || _tm->tm_sec < 0)
+			if (!_isvalid_tm_field(_tm->tm_sec, second))
 				return fail;
 		}
 	}
@@ -149,4 +197,22 @@ vector<string> split(const string& str, const string& seps)
 		l = r + 1;
 	}
 	return arr;
+}
+
+bool _isvalid_tm_field(time_t value, Timestamp::TimeUnit unit)
+{
+	switch (unit)
+	{
+	case Timestamp::month:
+		return (value >= 0 && value < 12);
+	case Timestamp::day:
+		return (value > 0 && value <= 31);
+	case Timestamp::hour:
+		return (value >= 0 && value < 24);
+	case Timestamp::minute:
+		return (value >= 0 && value <= 59);
+	case Timestamp::second:
+		return (value >= 0 && value <= 60);
+	default: return true;
+	}
 }

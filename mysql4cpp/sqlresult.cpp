@@ -110,10 +110,15 @@ string SqlResult::getString(const string& columnName)
 
 Timestamp SqlResult::getTime(int columnIndex)
 {
-	return Timestamp(time(NULL));
+	if (!isValidIndex(columnIndex - 1) || !isTime(fields[columnIndex - 1].type))
+		return Timestamp();
+	string time(row[columnIndex - 1]);
+	return Timestamp(time);
 }
 
 Timestamp SqlResult::getTime(const string& columnName)
 {
-	return Timestamp(time(NULL));
+	unordered_map<string, int>::iterator it = nameToIndex.find(columnName);
+	int index = it != nameToIndex.end() ? it->second + 1 : -1;
+	return getTime(index);
 }

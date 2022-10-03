@@ -26,15 +26,15 @@ public:
 		fail
 	} ParseResult;
 
+	Timestamp();
 	Timestamp(time_t time);
 	Timestamp(const string& timeStr);
-	Timestamp(const string& timeStr, const string& format);
 	Timestamp(const MYSQL_TIME* mysqlTime);
 
 	void addTime(int value, Timestamp::TimeUnit unit);
 	void addSeconds(double seconds);
 	string toFormattedString();
-	MYSQL_TIME toMysqlTime();
+	MYSQL_TIME toMysqlTime(enum_mysql_timestamp_type type);
 	bool isValid();
 
 	static Timestamp now();
@@ -44,9 +44,8 @@ public:
 private:
 	//Internal
 	time_t microSecondsSinceEpoch;
-	Timestamp();
-	
 };
 
 string strip(const string& str);
 vector<string> split(const string& str, const string& sep);
+bool _isvalid_tm_field(time_t value, Timestamp::TimeUnit unit);

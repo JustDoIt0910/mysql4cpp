@@ -234,7 +234,30 @@ void Statement::setString(int columnIndex, const string& value)
 			value.c_str(), value.length() + 1, value.length());
 }
 
-void Statement::setTime(int columnIndex, Timestamp value)
+void Statement::setTime(int columnIndex, Timestamp value, enum_field_types type)
 {
+	if (!isValidParamIndex(columnIndex))
+		return;
+	MYSQL_TIME mytime;
+	switch (type)
+	{
+	case MYSQL_TYPE_DATETIME:
+	case MYSQL_TYPE_TIMESTAMP:
+		mytime = value.toMysqlTime(MYSQL_TIMESTAMP_DATETIME);
+		break;
 
+	case MYSQL_TYPE_DATE:
+	case MYSQL_TYPE_YEAR:
+		mytime = value.toMysqlTime(MYSQL_TIMESTAMP_DATE);
+		break;
+
+	case MYSQL_TYPE_TIME:
+		mytime = value.toMysqlTime(MYSQL_TIMESTAMP_TIME);
+		break;
+
+	default: break;
+	}
+	paramBind[columnIndex - 1] = newParam(
+		type, &mytime, 
+		sizeof(mytime), sizeof(mytime));
 }
