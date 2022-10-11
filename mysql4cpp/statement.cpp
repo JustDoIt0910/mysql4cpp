@@ -4,8 +4,8 @@
 
 void stmtClose(MYSQL_STMT* stmt)
 {
-	printf("statement %p closed\n", stmt);
-	mysql_stmt_close(stmt);
+	if (stmt)
+		mysql_stmt_close(stmt);
 }
 
 Statement::Statement(MYSQL_STMT* stmt, const string& sql):

@@ -2,6 +2,8 @@
 #include <string>
 #include <mysql.h>
 #include "sqlconn.h"
+#include "connectionpool.h"
+#include <memory>
 using namespace std;
 
 
@@ -29,5 +31,6 @@ private:
 	string password;
 	string db;
 	string charset;
+	unique_ptr<ConnectionPool> pool;
 };
 

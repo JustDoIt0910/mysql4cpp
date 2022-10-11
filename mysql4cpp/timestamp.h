@@ -42,7 +42,6 @@ public:
 	const static int microSecondsPerSecond = 1000 * 1000;
 	
 private:
-	//Internal
 	time_t microSecondsSinceEpoch;
 };
 
